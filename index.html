@@ -116,6 +116,44 @@
 
   .vazio { text-align: center; color: var(--suave); padding: 40px 10px; line-height: 1.5; }
 
+  /* Abas */
+  .abas {
+    display: flex; gap: 6px; padding: 4px; margin-bottom: 18px;
+    background: #1a1428; border: 1px solid var(--card-borda); border-radius: 999px;
+  }
+  .aba {
+    flex: 1; padding: 11px 12px; border-radius: 999px;
+    background: transparent; color: var(--suave); font-weight: 700; font-size: 15px;
+  }
+  .aba[aria-selected="true"] { background: var(--laranja); color: #110d1a; }
+
+  /* Podio (top 3) */
+  .podio { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 760px) {
+    .podio { grid-template-columns: repeat(3, 1fr); align-items: end; }
+    .podio .card.lugar-1 { order: 2; transform: translateY(-14px); }
+    .podio .card.lugar-2 { order: 1; }
+    .podio .card.lugar-3 { order: 3; }
+  }
+  .podio .card.lugar-1 { border: 3px solid var(--ouro); box-shadow: 0 0 34px rgba(234, 179, 8, .3); }
+  .podio .card.lugar-2 { border: 2px solid #cbd5e1; }
+  .podio .card.lugar-3 { border: 2px solid #d97706; }
+  .podio .selo.prata { background: #cbd5e1; }
+  .podio .selo.bronze { background: #d97706; color: #fff; }
+  .podio .titulo { font-size: 20px; }
+
+  /* Lista do 4o em diante */
+  .subtitulo { font-size: 17px; margin: 26px 0 10px; color: var(--suave); }
+  .ranking { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .ranking li {
+    display: grid; grid-template-columns: 52px 1fr auto; align-items: center; gap: 10px;
+    background: var(--card); border: 1px solid var(--card-borda); border-radius: 14px; padding: 12px 14px;
+  }
+  .ranking .pos { font-weight: 800; font-size: 18px; color: var(--laranja); }
+  .ranking .nome { font-weight: 700; word-break: break-word; }
+  .ranking .quem { color: var(--apagado); font-size: 13px; }
+  .ranking .qtd { font-weight: 800; color: #facc15; white-space: nowrap; }
+
   /* Folha inferior (modal) */
   .fundo {
     position: fixed; inset: 0; background: rgba(5, 3, 10, .7);
@@ -181,8 +219,21 @@
     <button class="btn btn-contorno" id="btnAtualizar">⟳ Atualizar</button>
   </div>
 
-  <main id="grade" class="grade" aria-label="Fantasias inscritas"></main>
-  <div id="vazio" class="vazio" hidden>Ainda não há fantasias publicadas. Seja a primeira pessoa a se cadastrar! 👻</div>
+  <nav class="abas" id="abas" role="tablist" aria-label="Seções" hidden>
+    <button class="aba" id="abaResultado" role="tab" aria-controls="painelResultado">🏆 Resultado</button>
+    <button class="aba" id="abaFantasias" role="tab" aria-controls="painelFantasias">🎭 Fantasias</button>
+  </nav>
+
+  <section id="painelFantasias" role="tabpanel" aria-labelledby="abaFantasias">
+    <main id="grade" class="grade" aria-label="Fantasias inscritas"></main>
+    <div id="vazio" class="vazio" hidden>Ainda não há fantasias publicadas. Seja a primeira pessoa a se cadastrar! 👻</div>
+  </section>
+
+  <section id="painelResultado" role="tabpanel" aria-labelledby="abaResultado" hidden>
+    <div class="podio" id="podio"></div>
+    <h2 class="subtitulo" id="tituloRanking" hidden>Demais colocações</h2>
+    <ol class="ranking" id="ranking"></ol>
+  </section>
 </div>
 
 <!-- Votar -->
@@ -358,6 +409,107 @@ function desenhar() {
     }
     card.appendChild(conteudo);
     grade.appendChild(card);
+  });
+
+  desenharResultado(resultado ? lista : []);
+  definirAbas(resultado);
+}
+
+// Abas: a de Resultado so existe depois de "Apurar e publicar" no app;
+// quando ela aparece pela primeira vez, o site muda para ela sozinho.
+let abaAtual = "fantasias";
+let resultadoJaMostrado = false;
+function definirAbas(resultado) {
+  $("abas").hidden = !resultado;
+  if (!resultado) {
+    abaAtual = "fantasias";
+    resultadoJaMostrado = false;
+  } else if (!resultadoJaMostrado) {
+    abaAtual = "resultado";
+    resultadoJaMostrado = true;
+  }
+  mostrarAba(abaAtual);
+}
+function mostrarAba(qual) {
+  abaAtual = qual;
+  $("painelFantasias").hidden = qual !== "fantasias";
+  $("painelResultado").hidden = qual !== "resultado";
+  $("abaFantasias").setAttribute("aria-selected", String(qual === "fantasias"));
+  $("abaResultado").setAttribute("aria-selected", String(qual === "resultado"));
+}
+$("abaFantasias").addEventListener("click", () => mostrarAba("fantasias"));
+$("abaResultado").addEventListener("click", () => mostrarAba("resultado"));
+
+function desenharResultado(lista) {
+  const podio = $("podio");
+  const ranking = $("ranking");
+  const fotos = new Map();
+  podio.querySelectorAll("img[data-id]").forEach((img) => fotos.set(img.dataset.id, img));
+  podio.textContent = "";
+  ranking.textContent = "";
+  const posicao = (item) => 1 + lista.filter((o) => o.votos > item.votos).length;
+
+  // Top 3 com foto (empates no 3o lugar entram juntos).
+  lista.filter((item) => posicao(item) <= 3).forEach((item) => {
+    const pos = posicao(item);
+    const card = document.createElement("article");
+    card.className = "card lugar-" + pos;
+    const foto = document.createElement("div");
+    foto.className = "foto";
+    let img = fotos.get(String(item.id));
+    if (!img) {
+      img = document.createElement("img");
+      img.dataset.id = item.id;
+      img.alt = "Foto da fantasia " + item.titulo + " de " + item.participante;
+      img.onload = () => { img.classList.add("ok"); img.parentElement && img.parentElement.classList.add("carregada"); };
+      img.onerror = () => { img.parentElement && img.parentElement.classList.add("carregada"); };
+      img.src = urlFoto(item.id);
+    } else if (img.classList.contains("ok")) {
+      foto.classList.add("carregada");
+    }
+    foto.appendChild(img);
+    const selo = document.createElement("span");
+    selo.className = "selo" + (pos === 2 ? " prata" : pos === 3 ? " bronze" : "");
+    selo.textContent = medalha(pos);
+    foto.appendChild(selo);
+
+    const conteudo = document.createElement("div");
+    conteudo.className = "conteudo";
+    const titulo = document.createElement("div");
+    titulo.className = "titulo";
+    titulo.textContent = item.titulo;
+    const autor = document.createElement("div");
+    autor.className = "autor";
+    autor.textContent = "por " + item.participante;
+    const votos = document.createElement("div");
+    votos.className = "votos";
+    votos.textContent = textoVotos(item.votos);
+    conteudo.append(titulo, autor, votos);
+    card.append(foto, conteudo);
+    podio.appendChild(card);
+  });
+
+  // Do 4o lugar em diante, sem foto.
+  const demais = lista.filter((item) => posicao(item) > 3);
+  $("tituloRanking").hidden = demais.length === 0;
+  demais.forEach((item) => {
+    const li = document.createElement("li");
+    const pos = document.createElement("span");
+    pos.className = "pos";
+    pos.textContent = posicao(item) + "º";
+    const nome = document.createElement("div");
+    const titulo = document.createElement("div");
+    titulo.className = "nome";
+    titulo.textContent = item.titulo;
+    const quem = document.createElement("div");
+    quem.className = "quem";
+    quem.textContent = "por " + item.participante;
+    nome.append(titulo, quem);
+    const qtd = document.createElement("span");
+    qtd.className = "qtd";
+    qtd.textContent = item.votos + (item.votos === 1 ? " voto" : " votos");
+    li.append(pos, nome, qtd);
+    ranking.appendChild(li);
   });
 }
 
