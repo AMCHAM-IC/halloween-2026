@@ -142,6 +142,49 @@
   .podio .selo.bronze { background: #d97706; color: #fff; }
   .podio .titulo { font-size: 20px; }
 
+  /* Grafico de apuracao: barras horizontais ordenadas, uma serie (laranja), valor na ponta */
+  .nota-apuracao { color: var(--apagado); font-size: 14px; margin: -4px 0 12px; }
+  .apuracao { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+  .apuracao li {
+    display: grid; grid-template-columns: minmax(0, 36%) 1fr; gap: 12px; align-items: center;
+    padding: 7px 6px; border-radius: 10px; position: relative; outline: none;
+  }
+  .apuracao li:hover, .apuracao li:focus-visible { background: #1a1428; }
+  .apuracao .rot { display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+  .apuracao .pos { font-weight: 800; color: var(--suave); min-width: 2.2em; flex: none; }
+  .apuracao .nome { font-weight: 700; overflow-wrap: anywhere; }
+  .apuracao .quem { color: var(--apagado); font-size: 12px; overflow-wrap: anywhere; }
+  .apuracao .trilho { display: flex; align-items: center; gap: 8px; min-width: 0; border-left: 1px solid #3a2e54; min-height: 26px; }
+  .apuracao .barra {
+    display: block; flex: none;
+    height: 18px; background: var(--laranja); border-radius: 0 4px 4px 0;
+    width: calc(var(--frac) * (100% - 8.5em)); transform-origin: left center; animation: cresce .9s ease-out both;
+  }
+  .apuracao .valor { font-weight: 700; color: var(--texto); white-space: nowrap; font-size: 13px; }
+  .apuracao .valor small { color: var(--apagado); font-weight: 600; }
+  .apuracao li[data-tip]:hover::after, .apuracao li[data-tip]:focus-visible::after {
+    content: attr(data-tip); position: absolute; left: 36%; bottom: calc(100% + 4px); z-index: 5; pointer-events: none;
+    background: #0a0810; color: #fff; border: 1px solid var(--card-borda); border-radius: 8px;
+    padding: 6px 10px; font-size: 12px; white-space: nowrap; box-shadow: 0 6px 20px rgba(0, 0, 0, .4);
+  }
+  .apuracao .mais { display: block; color: var(--apagado); text-align: center; padding: 8px; }
+  @keyframes cresce { from { transform: scaleX(0); } }
+  @media (max-width: 559px) {
+    .apuracao li { grid-template-columns: 1fr; gap: 4px; }
+    .apuracao li[data-tip]:hover::after, .apuracao li[data-tip]:focus-visible::after { left: 6px; white-space: normal; max-width: 90%; }
+  }
+  /* Versao do telao: maior, para projetar */
+  .apuracao.grande { gap: .3vh; width: min(92vw, 150vh); margin: 0 auto; text-align: left; }
+  .apuracao.grande li { padding: .4vh 1vw; grid-template-columns: minmax(0, 34%) 1fr; }
+  .apuracao.grande li::after { display: none !important; }
+  .apuracao.grande .pos { font-size: 2.9vh; }
+  .apuracao.grande .nome { font-size: 2.9vh; line-height: 1.15; }
+  .apuracao.grande .quem { font-size: 1.8vh; }
+  .apuracao.grande .trilho { min-height: 4vh; }
+  .apuracao.grande .barra { height: 3vh; border-radius: 0 6px 6px 0; width: calc(var(--frac) * (100% - 9em)); }
+  .apuracao.grande .valor { font-size: 2.6vh; }
+  .apuracao.grande .mais { font-size: 2.2vh; padding: .4vh; }
+
   /* Lista do 4o em diante */
   .subtitulo { font-size: 17px; margin: 26px 0 10px; color: var(--suave); }
   .ranking { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
@@ -286,8 +329,9 @@
 
   <section id="painelResultado" role="tabpanel" aria-labelledby="abaResultado" hidden>
     <div class="podio" id="podio"></div>
-    <h2 class="subtitulo" id="tituloRanking" hidden>Demais colocações</h2>
-    <ol class="ranking" id="ranking"></ol>
+    <h2 class="subtitulo" id="tituloRanking" hidden>📊 Apuração completa</h2>
+    <p class="nota-apuracao" id="totalApuracao"></p>
+    <div id="grafico"></div>
   </section>
 </div>
 
@@ -504,11 +548,11 @@ $("abaResultado").addEventListener("click", () => mostrarAba("resultado"));
 
 function desenharResultado(lista) {
   const podio = $("podio");
-  const ranking = $("ranking");
+  const grafico = $("grafico");
   const fotos = new Map();
   podio.querySelectorAll("img[data-id]").forEach((img) => fotos.set(img.dataset.id, img));
   podio.textContent = "";
-  ranking.textContent = "";
+  grafico.textContent = "";
   const posicao = (item) => 1 + lista.filter((o) => o.votos > item.votos).length;
 
   // Top 3 com foto (empates no 3o lugar entram juntos).
@@ -551,28 +595,71 @@ function desenharResultado(lista) {
     podio.appendChild(card);
   });
 
-  // Do 4o lugar em diante, sem foto.
-  const demais = lista.filter((item) => posicao(item) > 3);
-  $("tituloRanking").hidden = demais.length === 0;
-  demais.forEach((item) => {
+  // Apuracao completa (todas as fantasias) em grafico de barras.
+  $("tituloRanking").hidden = lista.length === 0;
+  const g = graficoApuracao(lista, 0);
+  $("totalApuracao").textContent = g.total + (g.total === 1 ? " voto no total" : " votos no total") + " · passe o dedo ou o mouse numa barra para ver o detalhe";
+  grafico.appendChild(g.el);
+}
+
+// Barras horizontais ordenadas: uma serie (votos), valor e % na ponta, detalhe no hover/foco.
+// max > 0 limita as linhas (telao) e resume o restante em "e mais N".
+function graficoApuracao(lista, max, grande) {
+  const total = lista.reduce((s, i) => s + Math.max(0, i.votos), 0);
+  const maior = Math.max(1, ...lista.map((i) => i.votos));
+  const posicao = (item) => 1 + lista.filter((o) => o.votos > item.votos).length;
+  const ordenada = lista.slice().sort((a, b) => (b.votos - a.votos) || (a.id - b.id));
+  const visiveis = max > 0 ? ordenada.slice(0, max) : ordenada;
+  const ol = document.createElement("ol");
+  ol.className = "apuracao" + (grande ? " grande" : "");
+  ol.setAttribute("aria-label", "Apuração: votos por fantasia");
+  visiveis.forEach((item, indice) => {
+    const pos = posicao(item);
+    const pct = total ? Math.round((item.votos * 100) / total) : 0;
+    const textoV = item.votos + (item.votos === 1 ? " voto" : " votos");
     const li = document.createElement("li");
-    const pos = document.createElement("span");
-    pos.className = "pos";
-    pos.textContent = posicao(item) + "º";
-    const nome = document.createElement("div");
-    const titulo = document.createElement("div");
-    titulo.className = "nome";
-    titulo.textContent = item.titulo;
-    const quem = document.createElement("div");
-    quem.className = "quem";
-    quem.textContent = "por " + item.participante;
-    nome.append(titulo, quem);
-    const qtd = document.createElement("span");
-    qtd.className = "qtd";
-    qtd.textContent = item.votos + (item.votos === 1 ? " voto" : " votos");
-    li.append(pos, nome, qtd);
-    ranking.appendChild(li);
+    li.tabIndex = 0;
+    li.dataset.tip = pos + "º lugar · " + item.titulo + " (por " + item.participante + ") — " + textoV + ", " + pct + "% do total";
+    li.setAttribute("aria-label", li.dataset.tip);
+    const rot = document.createElement("div");
+    rot.className = "rot";
+    const p = document.createElement("span");
+    p.className = "pos";
+    p.textContent = pos === 1 ? "🥇" : pos === 2 ? "🥈" : pos === 3 ? "🥉" : pos + "º";
+    const nomes = document.createElement("div");
+    const n = document.createElement("div");
+    n.className = "nome";
+    n.textContent = item.titulo;
+    const q = document.createElement("div");
+    q.className = "quem";
+    q.textContent = "por " + item.participante;
+    nomes.append(n, q);
+    rot.append(p, nomes);
+    const trilho = document.createElement("div");
+    trilho.className = "trilho";
+    const barra = document.createElement("span");
+    barra.className = "barra";
+    barra.style.setProperty("--frac", String(item.votos / maior));
+    barra.style.animationDelay = (indice * 0.06) + "s";
+    const valor = document.createElement("span");
+    valor.className = "valor";
+    valor.textContent = textoV + " ";
+    const s = document.createElement("small");
+    s.textContent = "· " + pct + "%";
+    valor.appendChild(s);
+    trilho.append(barra, valor);
+    li.append(rot, trilho);
+    ol.appendChild(li);
   });
+  if (visiveis.length < ordenada.length) {
+    const li = document.createElement("li");
+    const resto = ordenada.length - visiveis.length;
+    li.innerHTML = "<span class=\"mais\"></span>";
+    li.firstChild.textContent = "e mais " + resto + (resto === 1 ? " fantasia" : " fantasias");
+    li.style.display = "block";
+    ol.appendChild(li);
+  }
+  return { el: ol, total };
 }
 
 function abrir(id) { $(id).classList.add("aberto"); }
@@ -707,6 +794,8 @@ const URL_SITE = "amcham-ic.github.io/halloween-2026";
 // QR code de https://amcham-ic.github.io/halloween-2026/ (gerado com segno, site/qrcode-site.svg).
 const QR_SITE = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iNDEwIiBoZWlnaHQ9IjQxMCIgY2xhc3M9InNlZ25vIj48ZyB0cmFuc2Zvcm09InNjYWxlKDEwKSI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGg0MXY0MWgtNDF6Ii8+PHBhdGggY2xhc3M9InFybGluZSIgc3Ryb2tlPSIjMTEwZDFhIiBkPSJNMiAyLjVoN20xIDBoMW0yIDBoNG0xIDBoMW0xIDBoM20yIDBoMW0xIDBoMW0yIDBoMW0xIDBoN20tMzcgMWgxbTUgMGgxbTEgMGgybTEgMGgzbTIgMGgybTIgMGgxbTIgMGgxbTMgMGgxbTIgMGgxbTUgMGgxbS0zNyAxaDFtMSAwaDNtMSAwaDFtMSAwaDltMyAwaDFtMSAwaDFtMSAwaDFtMyAwaDFtMSAwaDFtMSAwaDNtMSAwaDFtLTM3IDFoMW0xIDBoM20xIDBoMW0yIDBoMW0zIDBoM20zIDBoMW00IDBoM20zIDBoMW0xIDBoM20xIDBoMW0tMzcgMWgxbTEgMGgzbTEgMGgxbTIgMGgybTEgMGgybTMgMGgxbTEgMGgybTEgMGgxbTEgMGgxbTUgMGgxbTEgMGgzbTEgMGgxbS0zNyAxaDFtNSAwaDFtMSAwaDFtMiAwaDJtMSAwaDJtMSAwaDJtMiAwaDVtMSAwaDJtMSAwaDFtNSAwaDFtLTM3IDFoN20xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoN20tMjkgMWgxbTIgMGgzbTMgMGgybTEgMGgybTYgMGgxbS0yNyAxaDNtMSAwaDFtMSAwaDFtMyAwaDFtMSAwaDRtMSAwaDJtMiAwaDNtMiAwaDRtMiAwaDNtLTM1IDFoNG0xIDBoMm0zIDBoMW0xIDBoOG0xIDBoNG04IDBoMW0tMzQgMWgzbTEgMGgxbTIgMGgxbTEgMGgzbTQgMGgybTIgMGgybTEgMGgzbTIgMGgxbTEgMGgxbTEgMGgzbS0zNyAxaDFtMSAwaDJtMSAwaDFtNCAwaDJtMiAwaDFtMSAwaDFtMSAwaDJtMiAwaDFtMSAwaDFtMSAwaDJtMiAwaDNtMyAwaDFtLTM3IDFoMW0xIDBoMW0yIDBoMm0xIDBoM20yIDBoNW0zIDBoMm0xIDBoNG0xIDBoMm0xIDBoM20tMzIgMWgybTMgMGg0bTIgMGg1bTMgMGgzbTMgMGgybTEgMGgxbTEgMGgybS0zNCAxaDNtMSAwaDNtNCAwaDJtNyAwaDJtMiAwaDVtMiAwaDJtMSAwaDJtLTM3IDFoM20yIDBoMW0xIDBoMW0xIDBoMW0xIDBoMm0xIDBoMW0zIDBoNG0yIDBoMW0xIDBoMW0xIDBoNW0yIDBoMW0tMzYgMWgxbTMgMGgxbTEgMGgxbTIgMGgybTEgMGgzbTIgMGgybTEgMGgzbTEgMGgzbTIgMGgybTEgMGgxbTEgMGgxbTEgMGgxbS0zMyAxaDJtNSAwaDFtMiAwaDFtMSAwaDFtMSAwaDRtMSAwaDFtOSAwaDJtLTM0IDFoMW0yIDBoMW0xIDBoNW0xIDBoM20yIDBoNG0xIDBoMm0zIDBoMm0yIDBoMW0xIDBoMW0xIDBoMm0tMzYgMWgybTEgMGgybTMgMGgybTEgMGgxbTEgMGgxbTEgMGgybTIgMGgxbTEgMGgxbTMgMGgxbTIgMGg0bTIgMGgxbS0zNiAxaDJtNCAwaDFtMyAwaDFtMSAwaDFtMSAwaDFtMSAwaDFtMSAwaDFtNCAwaDVtMSAwaDZtLTM1IDFoMW0zIDBoMW0zIDBoMW0yIDBoMW0xIDBoMW0xIDBoMm0zIDBoM204IDBoMW0zIDBoMW0tMzUgMWgybTEgMGg0bTIgMGg0bTQgMGgxbTQgMGgxbTEgMGgzbTEgMGgxbTUgMGgybS0zNiAxaDFtOSAwaDJtMSAwaDNtNCAwaDJtMSAwaDFtNCAwaDNtMyAwaDFtLTM0IDFoMW0xIDBoMW0xIDBoMW0xIDBoMW0yIDBoMm0xIDBoMW0zIDBoMW0yIDBoMW0xIDBoM20yIDBoMW0xIDBoMW0xIDBoNG0tMzYgMWg0bTUgMGgzbTMgMGgxbTIgMGgybTIgMGgxbTEgMGgxbTQgMGgxbTEgMGgxbS0zMiAxaDFtMSAwaDFtMSAwaDFtMSAwaDJtMiAwaDFtMSAwaDJtMiAwaDVtMSAwaDFtMSAwaDFtMiAwaDFtMiAwaDJtMyAwaDJtLTM3IDFoMW0yIDBoMW00IDBoM20zIDBoMW00IDBoMW0xIDBoMm0xIDBoMW0xIDBoMW0yIDBoMW0xIDBoMW00IDBoMW0tMzcgMWgxbTQgMGgybTEgMGgxbTIgMGgybTMgMGgybTEgMGgzbTIgMGgxM20tMjkgMWgxbTEgMGg2bTEgMGgxbTEgMGgybTEgMGgybTEgMGgxbTEgMGgybTMgMGgxbS0zMyAxaDdtMiAwaDFtMSAwaDFtMiAwaDFtMSAwaDFtMSAwaDRtMiAwaDFtMyAwaDFtMSAwaDFtMSAwaDJtMSAwaDJtLTM3IDFoMW01IDBoMW0zIDBoMW01IDBoMW0xIDBoMW0yIDBoMm0zIDBoM20zIDBoMW0yIDBoMm0tMzcgMWgxbTEgMGgzbTEgMGgxbTEgMGgzbTEgMGgybTMgMGgybTEgMGgxbTIgMGgxMG0xIDBoMm0tMzYgMWgxbTEgMGgzbTEgMGgxbTEgMGgxbTEgMGgxbTMgMGgybTEgMGgybTEgMGgzbTEgMGgzbTEgMGgxbTEgMGgxbTEgMGgybS0zNCAxaDFtMSAwaDNtMSAwaDFtMSAwaDFtMSAwaDJtMSAwaDFtMTIgMGgxbTEgMGgybTYgMGgxbS0zNyAxaDFtNSAwaDFtMiAwaDJtNSAwaDFtMiAwaDJtMiAwaDFtMyAwaDJtMyAwaDFtMyAwaDFtLTM3IDFoN20zIDBoMm0xIDBoM20yIDBoMm0xIDBoMW0xIDBoNG0yIDBoMm0yIDBoNCIvPjwvZz48L3N2Zz4NCg==";
 let assinaturaTelao = "";
+let vistaTelao = "podio"; // com resultado publicado: "podio" <-> "grafico"
+const TROCA_VISTA_MS = 12000;
 
 function lerEstadoTelao(texto) {
   const partes = String(texto || "").split("|");
@@ -800,7 +889,7 @@ function telaEspera(fantasias, votos) {
 function desenharTelao() {
   const t = lerEstadoTelao(estado.telao);
   const totalVotos = typeof estado.total_votos === "number" && estado.total_votos >= 0 ? estado.total_votos : null;
-  const assinatura = [estado.fase, estado.telao, totalVotos, JSON.stringify(estado.inscricoes || [])].join("#");
+  const assinatura = [estado.fase, estado.telao, totalVotos, vistaTelao, JSON.stringify(estado.inscricoes || [])].join("#");
   if (assinatura === assinaturaTelao) return; // so redesenha quando algo mudou
   assinaturaTelao = assinatura;
 
@@ -811,7 +900,14 @@ function desenharTelao() {
   const cards = document.createElement("div");
   cards.className = "telao-cards";
 
-  // 1) Resultado publicado (de onde quer que tenha sido publicado): podio automatico.
+  // 1) Resultado publicado (de onde quer que tenha sido publicado): podio automatico,
+  //    alternando com o grafico da apuracao completa a cada TROCA_VISTA_MS.
+  if (estado.fase === "RESULTADO_PUBLICADO" && vistaTelao === "grafico" && lista.length > 0) {
+    const g = graficoApuracao(lista, 8, true);
+    etapa.textContent = "📊 Apuração completa · " + g.total + (g.total === 1 ? " voto" : " votos");
+    conteudo.appendChild(g.el);
+    return;
+  }
   if (estado.fase === "RESULTADO_PUBLICADO") {
     const posicao = (item) => 1 + lista.filter((o) => o.votos > item.votos).length;
     const podio = lista.filter((i) => i.votos > 0 && posicao(i) <= 3).sort((a, b) => posicao(a) - posicao(b));
@@ -856,6 +952,11 @@ if (MODO_TELAO) {
   document.title = "Telão · Concurso de Fantasias";
   carregarTelao();
   setInterval(carregarTelao, 4000);
+  setInterval(() => {
+    if (estado.fase !== "RESULTADO_PUBLICADO") { vistaTelao = "podio"; return; }
+    vistaTelao = vistaTelao === "podio" ? "grafico" : "podio";
+    desenharTelao();
+  }, TROCA_VISTA_MS);
 } else {
   carregar(false);
   setInterval(() => {
