@@ -218,8 +218,8 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
-const URL_LEITURA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/fc4e86af8b794213b646c77683c29cd8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=9wPOfiVt3RCVMWvYZWBBRldLEkPTeNeNo2DT_6fOlN0";
-const URL_ESCRITA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/24dd32611fea4d3f8448420ea4f1ab62/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=8un3oKhQzaNuoM3eTZTU5JW10WcB62IZ2CuCejq9K_8";
+const URL_LEITURA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/15/workflows/298fa0168fdf44409cafe99a33aec902/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=0BivyOIulkQo5gbjjP9-m-fkrYFuSV00cmt6jjlie5c";
+const URL_ESCRITA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/618f5758358a4e5697a384d1d1004f9e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gA2w4zHP4kiICRVJRFs17qAY_utPiji3M7ZVkka2gws";
 const URL_FORMS = "https://forms.office.com/Pages/ResponsePage.aspx?id=N0Zie_rLEEGi9jTKh0A0o0IYMMDt0m1NiW8f-Tt6lRNUN0lQSjIwR080VlRLWjQ0MDUxRlczMElFUiQlQCN0PWcu";
 const DOMINIO = "@amchambrasil.com.br";
 const ATUALIZAR_A_CADA_MS = 45000;
@@ -408,6 +408,7 @@ const MENSAGENS = {
   codigo_invalido: "Código incorreto. Confira o e-mail e tente de novo.",
   codigo_expirado: "Esse código expirou. Toque em “Reenviar código”.",
   codigo_bloqueado: "Muitas tentativas com esse código. Toque em “Reenviar código” para receber outro.",
+  aguarde: "Acabamos de enviar um código para esse e-mail. Aguarde 1 minuto para pedir outro.",
 };
 function mensagemJaVotou(r) {
   return "Este e-mail já votou" + (r.mensagem ? " em “" + r.mensagem + "”" : "") + ". Cada pessoa tem um único voto.";
