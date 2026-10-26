@@ -203,6 +203,51 @@
     display: none; max-width: calc(100% - 32px); text-align: center;
   }
   .toast.visivel { display: block; }
+
+  /* Modo telao (?telao): tela cheia para o projetor, conduzida pelo app */
+  #telao { display: none; }
+  body.modo-telao .pagina, body.modo-telao .toast { display: none; }
+  body.modo-telao #telao {
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; padding: 3vh 3vw 4vh; text-align: center; overflow: hidden;
+  }
+  #telao h1 {
+    font-family: Creepster, Inter, sans-serif; font-weight: 400; color: var(--laranja);
+    font-size: min(6.5vh, 4.4vw); margin: 0; letter-spacing: 2px; text-shadow: 0 0 30px rgba(255, 122, 24, .4);
+  }
+  #telaoConteudo { width: 100%; }
+  .telao-etapa { font-weight: 800; color: #facc15; font-size: 7vh; margin: 2vh 0 3vh; min-height: 8vh; }
+  .telao-numeros { display: flex; gap: 4vw; justify-content: center; margin-top: 6vh; }
+  .telao-numero {
+    background: var(--card); border: 1px solid var(--card-borda); border-radius: 3vh;
+    padding: 4vh 5vw; min-width: 26vw;
+  }
+  .telao-numero b { display: block; font-size: 15vh; line-height: 1; color: #fff; }
+  .telao-numero.votos b { color: #facc15; }
+  .telao-numero span { font-size: 4vh; color: var(--suave); }
+  .telao-chamada { margin-top: 6vh; font-size: 4.2vh; color: var(--suave); font-weight: 600; }
+  .telao-chamada strong { color: var(--laranja); }
+  .telao-cards { display: flex; gap: 2.5vw; justify-content: center; align-items: flex-end; flex-wrap: nowrap; width: 100%; }
+  .telao-card {
+    background: var(--card); border-radius: 3vh; overflow: hidden; flex: 0 1 28vw; max-width: 34vw;
+    border: 5px solid var(--ouro); animation: revela .9s cubic-bezier(.2, .9, .3, 1.2);
+  }
+  .telao-card.p2 { border-color: #cbd5e1; }
+  .telao-card.p3 { border-color: #d97706; }
+  .telao-card.tpodio.p1 { transform: translateY(-3vh); }
+  .telao-card .tfoto { position: relative; height: 52vh; background: #0a0810; }
+  .telao-card.tpodio .tfoto { height: 44vh; }
+  .telao-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .telao-card .tmedalha {
+    position: absolute; top: 1.5vh; left: 1.5vh; background: var(--ouro); color: #1e1400;
+    font-weight: 800; font-size: 2.6vh; padding: .8vh 1.4vh; border-radius: 999px;
+  }
+  .telao-card.p2 .tmedalha { background: #cbd5e1; }
+  .telao-card.p3 .tmedalha { background: #d97706; color: #fff; }
+  .telao-card .ttitulo { font-weight: 800; font-size: 4.2vh; margin: 1.6vh 1vw .4vh; line-height: 1.1; }
+  .telao-card .tquem { color: var(--suave); font-size: 2.8vh; }
+  .telao-card .tvotos { color: #facc15; font-weight: 800; font-size: 4vh; margin: 1vh 0 2vh; }
+  @keyframes revela { from { opacity: 0; transform: scale(.6) translateY(6vh); } }
 </style>
 </head>
 <body>
@@ -268,8 +313,15 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<!-- Modo telao: abra o site com ?telao no projetor; quem conduz e o app -->
+<section id="telao" aria-live="polite">
+  <h1>🎃 Concurso de Fantasias · Halloween 2026</h1>
+  <div class="telao-etapa" id="telaoEtapa"></div>
+  <div id="telaoConteudo"></div>
+</section>
+
 <script>
-const URL_LEITURA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/15/workflows/298fa0168fdf44409cafe99a33aec902/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=0BivyOIulkQo5gbjjP9-m-fkrYFuSV00cmt6jjlie5c";
+const URL_LEITURA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/11/workflows/0f28bcd13c20472aa07572949290e507/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2sMM_VHHLt627rWPw6piHBZ8LS2fpm9xmyp9Ydhfr6U";
 const URL_ESCRITA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/618f5758358a4e5697a384d1d1004f9e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gA2w4zHP4kiICRVJRFs17qAY_utPiji3M7ZVkka2gws";
 const URL_FORMS = "https://forms.office.com/Pages/ResponsePage.aspx?id=N0Zie_rLEEGi9jTKh0A0o0IYMMDt0m1NiW8f-Tt6lRNUN0lQSjIwR080VlRLWjQ0MDUxRlczMElFUiQlQCN0PWcu";
 const DOMINIO = "@amchambrasil.com.br";
@@ -637,10 +689,135 @@ $("lnkTrocarEmail").addEventListener("click", (e) => { e.preventDefault(); mostr
 $("btnCadastrar").addEventListener("click", () => window.open(URL_FORMS, "_blank", "noopener"));
 $("btnAtualizar").addEventListener("click", () => carregar(false));
 
-carregar(false);
-setInterval(() => {
-  if (!document.querySelector(".fundo.aberto") && document.visibilityState === "visible") carregar(true);
-}, ATUALIZAR_A_CADA_MS);
+// ---------- Modo telao ----------
+// O app grava no item de controle: TELAO|etapa|total de etapas|total de votos|id:votos:pos,...
+// (so o que ja foi revelado). Vazio = telao desligado no app.
+const MODO_TELAO = new URLSearchParams(location.search).has("telao");
+const URL_SITE = "amcham-ic.github.io/halloween-2026";
+let assinaturaTelao = "";
+
+function lerEstadoTelao(texto) {
+  const partes = String(texto || "").split("|");
+  if (partes[0] !== "TELAO") return null;
+  const revelados = (partes[4] || "").split(",").filter(Boolean).map((t) => {
+    const [id, votos, pos] = t.split(":").map(Number);
+    return { id, votos, pos };
+  });
+  return { etapa: Number(partes[1]) || 0, etapas: Number(partes[2]) || 0, total: Number(partes[3]) || 0, revelados };
+}
+
+function cardTelao(item, pos, votos, podio) {
+  const info = (estado.inscricoes || []).find((i) => i.id === item.id) || { titulo: "Fantasia", participante: "" };
+  const card = document.createElement("article");
+  card.className = "telao-card p" + pos + (podio ? " tpodio" : "");
+  const foto = document.createElement("div");
+  foto.className = "tfoto";
+  const img = document.createElement("img");
+  img.src = urlFoto(item.id);
+  img.alt = "Foto da fantasia " + info.titulo;
+  foto.appendChild(img);
+  if (podio) {
+    const m = document.createElement("span");
+    m.className = "tmedalha";
+    m.textContent = medalha(pos);
+    foto.appendChild(m);
+  }
+  const t = document.createElement("div");
+  t.className = "ttitulo";
+  t.textContent = info.titulo;
+  const q = document.createElement("div");
+  q.className = "tquem";
+  q.textContent = info.participante ? "por " + info.participante : "";
+  const v = document.createElement("div");
+  v.className = "tvotos";
+  v.textContent = textoVotos(votos);
+  card.append(foto, t, q, v);
+  return card;
+}
+
+function telaEspera(fantasias, votos) {
+  const caixa = document.createElement("div");
+  const numeros = document.createElement("div");
+  numeros.className = "telao-numeros";
+  const n1 = document.createElement("div");
+  n1.className = "telao-numero";
+  n1.innerHTML = "<b></b><span></span>";
+  n1.querySelector("b").textContent = fantasias;
+  n1.querySelector("span").textContent = fantasias === 1 ? "fantasia" : "fantasias";
+  numeros.appendChild(n1);
+  if (votos !== null) {
+    const n2 = document.createElement("div");
+    n2.className = "telao-numero votos";
+    n2.innerHTML = "<b></b><span></span>";
+    n2.querySelector("b").textContent = votos;
+    n2.querySelector("span").textContent = votos === 1 ? "voto" : "votos";
+    numeros.appendChild(n2);
+  }
+  const chamada = document.createElement("div");
+  chamada.className = "telao-chamada";
+  if (estado.fase === "VOTACAO_ABERTA") {
+    chamada.textContent = "📱 Vote pelo celular: ";
+    const s = document.createElement("strong");
+    s.textContent = URL_SITE;
+    chamada.appendChild(s);
+  } else {
+    chamada.textContent = "🔒 Votação encerrada! Preparem-se para conhecer os vencedores...";
+  }
+  caixa.append(numeros, chamada);
+  return caixa;
+}
+
+function desenharTelao() {
+  const t = lerEstadoTelao(estado.telao);
+  const assinatura = (estado.fase || "") + "#" + (estado.telao || "") + "#" + (estado.inscricoes || []).length;
+  if (assinatura === assinaturaTelao) return; // so redesenha quando algo mudou
+  assinaturaTelao = assinatura;
+
+  const etapa = $("telaoEtapa");
+  const conteudo = $("telaoConteudo");
+  conteudo.textContent = "";
+  const fantasias = (estado.inscricoes || []).length;
+
+  if (!t || t.etapa === 0) {
+    etapa.textContent = "";
+    conteudo.appendChild(telaEspera(fantasias, t ? t.total : null));
+    return;
+  }
+  const cards = document.createElement("div");
+  cards.className = "telao-cards";
+  if (t.etapa > t.etapas) {
+    etapa.textContent = t.revelados.length ? "🏆 Os grandes vencedores!" : "Nenhum voto registrado";
+    t.revelados.slice().sort((a, b) => a.pos - b.pos)
+      .forEach((r) => cards.appendChild(cardTelao(r, r.pos, r.votos, true)));
+  } else {
+    const atual = Math.min(...t.revelados.map((r) => r.pos));
+    etapa.textContent = atual === 1 ? "🥇 1º LUGAR" : atual === 2 ? "🥈 2º LUGAR" : "🥉 3º LUGAR";
+    t.revelados.filter((r) => r.pos === atual)
+      .forEach((r) => cards.appendChild(cardTelao(r, r.pos, r.votos, false)));
+  }
+  conteudo.appendChild(cards);
+}
+
+async function carregarTelao() {
+  try {
+    const resp = await fetch(URL_LEITURA + "&acao=listar", { cache: "no-store" });
+    if (!resp.ok) return;
+    estado = await resp.json();
+    desenharTelao();
+  } catch (_) { /* tenta de novo no proximo ciclo */ }
+}
+
+if (MODO_TELAO) {
+  document.body.classList.add("modo-telao");
+  document.title = "Telão · Concurso de Fantasias";
+  carregarTelao();
+  setInterval(carregarTelao, 4000);
+} else {
+  carregar(false);
+  setInterval(() => {
+    if (!document.querySelector(".fundo.aberto") && document.visibilityState === "visible") carregar(true);
+  }, ATUALIZAR_A_CADA_MS);
+}
 </script>
 </body>
 </html>
