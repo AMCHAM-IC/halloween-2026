@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#110d1a">
+<title>Concurso de Fantasias · Halloween 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #110d1a;
+    --card: #201930;
+    --card-borda: #3a2e54;
+    --texto: #ffffff;
+    --suave: #d6cde6;
+    --apagado: #beb2d4;
+    --laranja: #ff7a18;
+    --laranja-claro: #ff9646;
+    --roxo: #7c3aed;
+    --roxo-claro: #8b5cf6;
+    --verde: #4ade80;
+    --ouro: #eab308;
+    --erro: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--texto); }
+  body {
+    font-family: Inter, "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 500px at 50% -200px, rgba(124, 58, 237, .35), transparent 70%),
+      var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  .pagina { max-width: 1100px; margin: 0 auto; padding: 20px 16px 120px; }
+  header h1 {
+    font-family: Creepster, Inter, sans-serif;
+    font-weight: 400;
+    color: var(--laranja);
+    font-size: clamp(30px, 8vw, 46px);
+    letter-spacing: 1px;
+    margin: 4px 0 6px;
+    text-shadow: 0 0 24px rgba(255, 122, 24, .35);
+  }
+  header p { color: var(--suave); margin: 0 0 16px; font-size: 15px; line-height: 1.45; }
+
+  .faixa {
+    border-radius: 14px;
+    padding: 12px 14px;
+    font-weight: 600;
+    font-size: 15px;
+    line-height: 1.4;
+    margin-bottom: 16px;
+    background: #4c1d95;
+  }
+  .faixa.encerrada { background: #37304a; }
+  .faixa.resultado { background: var(--ouro); color: #1e1400; font-size: 17px; }
+  .faixa.erro { background: #7f1d1d; }
+
+  .acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  button { font: inherit; cursor: pointer; border: 0; }
+  .btn {
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-weight: 700;
+    font-size: 15px;
+    transition: transform .08s ease, background .15s ease;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn-laranja { background: var(--laranja); color: #110d1a; }
+  .btn-laranja:hover { background: var(--laranja-claro); }
+  .btn-roxo { background: var(--roxo); color: #fff; }
+  .btn-roxo:hover { background: var(--roxo-claro); }
+  .btn-contorno { background: transparent; color: var(--suave); border: 1px solid #7c5cb0; }
+  .btn-contorno:hover { background: #2d2242; color: #fff; }
+  .btn-largo { width: 100%; }
+
+  .grade { display: grid; grid-template-columns: 1fr; gap: 14px; }
+  @media (min-width: 560px) { .grade { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 900px) { .grade { grid-template-columns: repeat(3, 1fr); } }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-borda);
+    border-radius: 18px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .card.primeiro { border: 3px solid var(--ouro); box-shadow: 0 0 28px rgba(234, 179, 8, .25); }
+  .foto {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    background: linear-gradient(110deg, #17121f 30%, #241b33 50%, #17121f 70%);
+    background-size: 200% 100%;
+    animation: brilho 1.4s linear infinite;
+  }
+  .foto img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .3s; }
+  .foto img.ok { opacity: 1; }
+  .foto.carregada { animation: none; background: #0a0810; }
+  @keyframes brilho { to { background-position: -200% 0; } }
+  .selo {
+    position: absolute; top: 10px; left: 10px;
+    background: var(--ouro); color: #1e1400;
+    font-weight: 800; font-size: 13px;
+    padding: 6px 10px; border-radius: 999px;
+  }
+  .conteudo { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .titulo { font-weight: 800; font-size: 18px; line-height: 1.25; word-break: break-word; }
+  .autor { color: var(--apagado); font-size: 14px; }
+  .votos { color: #facc15; font-weight: 800; font-size: 20px; margin-top: 6px; }
+  .conteudo .btn { margin-top: 10px; }
+
+  .vazio { text-align: center; color: var(--suave); padding: 40px 10px; line-height: 1.5; }
+
+  /* Folha inferior (modal) */
+  .fundo {
+    position: fixed; inset: 0; background: rgba(5, 3, 10, .7);
+    display: none; align-items: flex-end; justify-content: center; z-index: 10;
+  }
+  .fundo.aberto { display: flex; }
+  .folha {
+    background: #1a1428; width: 100%; max-width: 520px;
+    border-radius: 22px 22px 0 0; padding: 20px 18px calc(22px + env(safe-area-inset-bottom));
+    max-height: 92vh; overflow-y: auto;
+    animation: sobe .2s ease-out;
+  }
+  @media (min-width: 560px) { .fundo { align-items: center; } .folha { border-radius: 22px; } }
+  @keyframes sobe { from { transform: translateY(30px); opacity: 0; } }
+  .folha h2 { margin: 0 0 6px; font-size: 20px; }
+  .folha p { color: var(--suave); margin: 0 0 14px; line-height: 1.45; font-size: 14px; }
+  label { display: block; font-size: 13px; font-weight: 600; color: var(--suave); margin: 12px 0 6px; }
+  input[type=text], input[type=email] {
+    width: 100%; padding: 13px 14px; border-radius: 12px;
+    border: 1px solid #4b3b6b; background: #110d1a; color: #fff; font: inherit; font-size: 16px;
+  }
+  input:focus { outline: 2px solid var(--laranja); border-color: transparent; }
+  .escolha-foto {
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    border: 2px dashed #4b3b6b; border-radius: 14px; min-height: 140px; padding: 10px;
+    color: var(--suave); cursor: pointer; overflow: hidden;
+  }
+  .escolha-foto img { max-width: 100%; max-height: 260px; border-radius: 10px; }
+  .botoes { display: flex; gap: 10px; margin-top: 18px; }
+  .botoes .btn { flex: 1; }
+  .aviso { margin-top: 12px; font-size: 14px; font-weight: 600; min-height: 1.2em; }
+  .aviso.erro { color: var(--erro); }
+  .aviso.ok { color: var(--verde); }
+  .resumo-voto {
+    display: flex; gap: 12px; align-items: center;
+    background: #110d1a; border-radius: 14px; padding: 10px; margin-bottom: 4px;
+  }
+  .resumo-voto img { width: 64px; height: 80px; object-fit: cover; border-radius: 10px; background: #0a0810; }
+  .resumo-voto strong { display: block; font-size: 16px; }
+  .resumo-voto span { color: var(--apagado); font-size: 13px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%);
+    background: #14532d; color: #fff; font-weight: 600;
+    padding: 12px 18px; border-radius: 999px; z-index: 20;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, .4);
+    display: none; max-width: calc(100% - 32px); text-align: center;
+  }
+  .toast.visivel { display: block; }
+</style>
+</head>
+<body>
+<div class="pagina">
+  <header>
+    <h1>🎃 Concurso de Fantasias</h1>
+    <p>Halloween 2026 · Cadastre sua fantasia e vote na melhor. Para votar, você recebe um código no seu e-mail @amchambrasil.com.br. Um voto por pessoa.</p>
+  </header>
+
+  <div id="faixa" class="faixa" role="status" aria-live="polite">⏳ Carregando as fantasias...</div>
+
+  <div class="acoes" id="acoes" hidden>
+    <button class="btn btn-laranja" id="btnCadastrar">➕ Cadastrar minha fantasia</button>
+    <button class="btn btn-contorno" id="btnAtualizar">⟳ Atualizar</button>
+  </div>
+
+  <main id="grade" class="grade" aria-label="Fantasias inscritas"></main>
+  <div id="vazio" class="vazio" hidden>Ainda não há fantasias publicadas. Seja a primeira pessoa a se cadastrar! 👻</div>
+</div>
+
+<!-- Votar -->
+<div class="fundo" id="fundoVoto" role="dialog" aria-modal="true" aria-labelledby="tituloVoto">
+  <div class="folha">
+    <h2 id="tituloVoto">Votar nesta fantasia</h2>
+    <div class="resumo-voto">
+      <img id="votoFoto" alt="">
+      <div><strong id="votoTitulo"></strong><span id="votoAutor"></span></div>
+    </div>
+
+    <div id="passoEmail">
+      <label for="votoEmail">Seu e-mail corporativo</label>
+      <input id="votoEmail" type="email" inputmode="email" autocomplete="email" placeholder="nome.sobrenome@amchambrasil.com.br">
+      <p style="margin-top:8px">Vamos enviar um código de 6 dígitos para esse e-mail. Cada pessoa tem um único voto.</p>
+    </div>
+
+    <div id="passoCodigo" hidden>
+      <p style="margin-top:14px">Enviamos um código para <strong id="emailEnviado"></strong>. Confira sua caixa de entrada (e o lixo eletrônico).</p>
+      <label for="votoCodigo">Código recebido</label>
+      <input id="votoCodigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" style="letter-spacing:6px;font-size:22px;text-align:center">
+      <p style="margin-top:8px">Depois de confirmar, não dá para trocar o voto. <a href="#" id="lnkReenviar" style="color:var(--laranja)">Reenviar código</a> · <a href="#" id="lnkTrocarEmail" style="color:var(--laranja)">Usar outro e-mail</a></p>
+    </div>
+
+    <div id="votoAviso" class="aviso" role="alert"></div>
+    <div class="botoes">
+      <button class="btn btn-contorno" data-fechar>Cancelar</button>
+      <button class="btn btn-laranja" id="btnPrincipalVoto">Receber código</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+const URL_LEITURA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/fc4e86af8b794213b646c77683c29cd8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=9wPOfiVt3RCVMWvYZWBBRldLEkPTeNeNo2DT_6fOlN0";
+const URL_ESCRITA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/10/workflows/24dd32611fea4d3f8448420ea4f1ab62/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=8un3oKhQzaNuoM3eTZTU5JW10WcB62IZ2CuCejq9K_8";
+const URL_FORMS = "https://forms.office.com/Pages/ResponsePage.aspx?id=N0Zie_rLEEGi9jTKh0A0o0IYMMDt0m1NiW8f-Tt6lRNUN0lQSjIwR080VlRLWjQ0MDUxRlczMElFUiQlQCN0PWcu";
+const DOMINIO = "@amchambrasil.com.br";
+const ATUALIZAR_A_CADA_MS = 45000;
+
+const $ = (id) => document.getElementById(id);
+let estado = { fase: "", inscricoes: [] };
+let escolhida = null;
+
+function guardar(chave, valor) { try { localStorage.setItem(chave, valor); } catch (_) {} }
+function ler(chave) { try { return localStorage.getItem(chave) || ""; } catch (_) { return ""; } }
+
+function urlFoto(id) { return URL_LEITURA + "&acao=foto&id=" + encodeURIComponent(id); }
+
+function emailValido(email) {
+  const e = email.trim().toLowerCase();
+  return e.endsWith(DOMINIO) && e.length > DOMINIO.length + 1 && !e.includes(" ");
+}
+
+function toast(texto, cor) {
+  const t = $("toast");
+  t.textContent = texto;
+  t.style.background = cor || "#14532d";
+  t.classList.add("visivel");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove("visivel"), 4000);
+}
+
+async function carregar(silencioso) {
+  try {
+    const resp = await fetch(URL_LEITURA + "&acao=listar", { cache: "no-store" });
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    estado = await resp.json();
+    desenhar();
+  } catch (erro) {
+    if (!silencioso) {
+      const f = $("faixa");
+      f.className = "faixa erro";
+      f.textContent = "⚠️ Não conseguimos carregar as fantasias. Verifique a internet e toque em Atualizar.";
+      $("acoes").hidden = false;
+    }
+  }
+}
+
+function textoVotos(n) { return "🗳️ " + n + (n === 1 ? " voto" : " votos"); }
+function medalha(pos) { return pos === 1 ? "🥇 1º lugar" : pos === 2 ? "🥈 2º lugar" : pos === 3 ? "🥉 3º lugar" : pos + "º lugar"; }
+
+function desenhar() {
+  const fase = estado.fase || "VOTACAO_ABERTA";
+  const resultado = fase === "RESULTADO_PUBLICADO";
+  const aberta = fase === "VOTACAO_ABERTA";
+  let lista = (estado.inscricoes || []).slice();
+
+  if (resultado) lista.sort((a, b) => (b.votos - a.votos) || (a.id - b.id));
+  else lista.sort((a, b) => a.id - b.id);
+
+  const maximo = resultado && lista.length ? lista[0].votos : 0;
+  const f = $("faixa");
+  if (resultado) {
+    f.className = "faixa resultado";
+    const vencedores = lista.filter((i) => i.votos === maximo && maximo > 0);
+    f.textContent = vencedores.length === 0
+      ? "🏆 Resultado! Nenhum voto foi registrado."
+      : "🏆 " + (vencedores.length > 1 ? "Empate no 1º lugar: " : "Vencedora: ") +
+        vencedores.map((v) => "“" + v.titulo + "” (" + v.participante + ")").join(" e ") +
+        " com " + textoVotos(maximo).replace("🗳️ ", "") + "!";
+  } else if (!aberta) {
+    f.className = "faixa encerrada";
+    f.textContent = "🔒 Votação encerrada! O resultado aparece aqui em instantes.";
+  } else {
+    const meu = ler("halloween2026-voto");
+    f.className = "faixa";
+    f.textContent = meu
+      ? "✅ Seu voto foi em “" + meu + "”. Obrigado por participar!"
+      : "👻 Escolha sua fantasia favorita e toque em Votar. Você tem um único voto.";
+  }
+
+  $("acoes").hidden = false;
+  $("btnCadastrar").hidden = !aberta;
+  $("vazio").hidden = lista.length > 0;
+
+  const grade = $("grade");
+  const fotosAtuais = new Map();
+  grade.querySelectorAll("img[data-id]").forEach((img) => fotosAtuais.set(img.dataset.id, img.closest(".foto")));
+  grade.textContent = "";
+
+  lista.forEach((item) => {
+    const card = document.createElement("article");
+    card.className = "card";
+    const pos = resultado ? 1 + lista.filter((o) => o.votos > item.votos).length : 0;
+    if (resultado && pos === 1 && maximo > 0) card.classList.add("primeiro");
+
+    // Reaproveita a foto ja baixada para nao piscar a cada atualizacao.
+    let foto = fotosAtuais.get(String(item.id));
+    if (!foto) {
+      foto = document.createElement("div");
+      foto.className = "foto";
+      const img = document.createElement("img");
+      img.loading = "lazy";
+      img.dataset.id = item.id;
+      img.alt = "Foto da fantasia " + item.titulo + " de " + item.participante;
+      img.onload = () => { img.classList.add("ok"); foto.classList.add("carregada"); };
+      img.onerror = () => { foto.classList.add("carregada"); };
+      img.src = urlFoto(item.id);
+      foto.appendChild(img);
+    }
+    foto.querySelectorAll(".selo").forEach((s) => s.remove());
+    if (resultado) {
+      const selo = document.createElement("span");
+      selo.className = "selo";
+      selo.textContent = medalha(pos);
+      foto.appendChild(selo);
+    }
+    card.appendChild(foto);
+
+    const conteudo = document.createElement("div");
+    conteudo.className = "conteudo";
+    const titulo = document.createElement("div");
+    titulo.className = "titulo";
+    titulo.textContent = item.titulo;
+    const autor = document.createElement("div");
+    autor.className = "autor";
+    autor.textContent = "por " + item.participante;
+    conteudo.append(titulo, autor);
+
+    if (resultado) {
+      const v = document.createElement("div");
+      v.className = "votos";
+      v.textContent = textoVotos(item.votos);
+      conteudo.appendChild(v);
+    } else if (aberta) {
+      const b = document.createElement("button");
+      b.className = "btn btn-roxo btn-largo";
+      b.textContent = "🗳️ Votar";
+      b.addEventListener("click", () => abrirVoto(item));
+      conteudo.appendChild(b);
+    }
+    card.appendChild(conteudo);
+    grade.appendChild(card);
+  });
+}
+
+function abrir(id) { $(id).classList.add("aberto"); }
+function fechar(id) { $(id).classList.remove("aberto"); }
+document.querySelectorAll("[data-fechar]").forEach((b) =>
+  b.addEventListener("click", () => fechar(b.closest(".fundo").id)));
+document.querySelectorAll(".fundo").forEach((f) =>
+  f.addEventListener("click", (e) => { if (e.target === f) fechar(f.id); }));
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") document.querySelectorAll(".fundo.aberto").forEach((f) => fechar(f.id));
+});
+
+function abrirVoto(item) {
+  escolhida = item;
+  $("votoTitulo").textContent = item.titulo;
+  $("votoAutor").textContent = "por " + item.participante;
+  $("votoFoto").src = urlFoto(item.id);
+  $("votoFoto").alt = "Foto de " + item.titulo;
+  $("votoEmail").value = ler("halloween2026-email");
+  $("votoCodigo").value = "";
+  mostrarPasso("email");
+  avisar("", "");
+  abrir("fundoVoto");
+  setTimeout(() => $("votoEmail").focus(), 50);
+}
+
+let passo = "email";
+function mostrarPasso(qual) {
+  passo = qual;
+  $("passoEmail").hidden = qual !== "email";
+  $("passoCodigo").hidden = qual !== "codigo";
+  const b = $("btnPrincipalVoto");
+  b.disabled = false;
+  b.textContent = qual === "email" ? "Receber código" : "Confirmar voto";
+}
+function avisar(texto, tipo) {
+  const a = $("votoAviso");
+  a.className = "aviso" + (tipo ? " " + tipo : "");
+  a.textContent = texto;
+}
+
+const MENSAGENS = {
+  email_invalido: "Use seu e-mail " + DOMINIO + ".",
+  email_nao_encontrado: "Não encontramos esse e-mail na Amcham. Confira se digitou certo.",
+  encerrada: "A votação foi encerrada.",
+  indisponivel: "Essa fantasia não está mais disponível. Atualize a página.",
+  codigo_invalido: "Código incorreto. Confira o e-mail e tente de novo.",
+  codigo_expirado: "Esse código expirou. Toque em “Reenviar código”.",
+  codigo_bloqueado: "Muitas tentativas com esse código. Toque em “Reenviar código” para receber outro.",
+};
+function mensagemJaVotou(r) {
+  return "Este e-mail já votou" + (r.mensagem ? " em “" + r.mensagem + "”" : "") + ". Cada pessoa tem um único voto.";
+}
+
+async function enviar(dados) {
+  const resp = await fetch(URL_ESCRITA, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dados),
+  });
+  if (!resp.ok) throw new Error("HTTP " + resp.status);
+  return resp.json();
+}
+
+async function pedirCodigo() {
+  const email = $("votoEmail").value.trim().toLowerCase();
+  if (!emailValido(email)) { avisar(MENSAGENS.email_invalido, "erro"); return; }
+  const b = $("btnPrincipalVoto");
+  b.disabled = true;
+  b.textContent = "⏳ Enviando código...";
+  avisar("", "");
+  try {
+    const r = await enviar({ acao: "codigo", email });
+    guardar("halloween2026-email", email);
+    if (r.status === "codigo_enviado") {
+      $("emailEnviado").textContent = email;
+      mostrarPasso("codigo");
+      avisar("Código enviado! Ele vale por 15 minutos.", "ok");
+      setTimeout(() => $("votoCodigo").focus(), 50);
+      return;
+    }
+    avisar(r.status === "ja_votou" ? mensagemJaVotou(r) : (MENSAGENS[r.status] || "Não conseguimos enviar o código agora. Tente de novo em instantes."), "erro");
+    if (r.status === "encerrada") carregar(true);
+  } catch (_) {
+    avisar("Falha de conexão. Confira a internet e tente de novo.", "erro");
+  }
+  mostrarPasso("email");
+}
+
+async function confirmarVoto() {
+  const email = $("votoEmail").value.trim().toLowerCase();
+  const codigo = $("votoCodigo").value.replace(/\D/g, "");
+  if (codigo.length !== 6) { avisar("Digite os 6 números do código.", "erro"); return; }
+  const b = $("btnPrincipalVoto");
+  b.disabled = true;
+  b.textContent = "⏳ Registrando...";
+  avisar("", "");
+  try {
+    const r = await enviar({ acao: "votar", email, id: escolhida.id, codigo });
+    if (r.status === "confirmado") {
+      guardar("halloween2026-voto", r.mensagem || escolhida.titulo);
+      fechar("fundoVoto");
+      toast("✅ Voto registrado em “" + (r.mensagem || escolhida.titulo) + "”. Obrigado! 🎃");
+      desenhar();
+      return;
+    }
+    avisar(r.status === "ja_votou" ? mensagemJaVotou(r) : (MENSAGENS[r.status] || "Não conseguimos registrar agora. Tente de novo em instantes."), "erro");
+    if (r.status === "encerrada" || r.status === "indisponivel") carregar(true);
+  } catch (_) {
+    avisar("Falha de conexão. Confira a internet e tente de novo.", "erro");
+  }
+  b.disabled = false;
+  b.textContent = "Confirmar voto";
+}
+
+$("btnPrincipalVoto").addEventListener("click", () => (passo === "email" ? pedirCodigo() : confirmarVoto()));
+$("votoEmail").addEventListener("keydown", (e) => { if (e.key === "Enter") pedirCodigo(); });
+$("votoCodigo").addEventListener("keydown", (e) => { if (e.key === "Enter") confirmarVoto(); });
+$("lnkReenviar").addEventListener("click", (e) => { e.preventDefault(); pedirCodigo(); });
+$("lnkTrocarEmail").addEventListener("click", (e) => { e.preventDefault(); mostrarPasso("email"); avisar("", ""); $("votoEmail").focus(); });
+
+// Cadastro pelo mesmo Forms usado no app.
+$("btnCadastrar").addEventListener("click", () => window.open(URL_FORMS, "_blank", "noopener"));
+$("btnAtualizar").addEventListener("click", () => carregar(false));
+
+carregar(false);
+setInterval(() => {
+  if (!document.querySelector(".fundo.aberto") && document.visibilityState === "visible") carregar(true);
+}, ATUALIZAR_A_CADA_MS);
+</script>
+</body>
+</html>
