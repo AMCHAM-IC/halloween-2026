@@ -25,6 +25,7 @@
     --erro: #f87171;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { margin: 0; background: var(--bg); color: var(--texto); }
   body {
     font-family: Inter, "Segoe UI", system-ui, sans-serif;
@@ -90,6 +91,7 @@
     display: flex;
     flex-direction: column;
   }
+  .card.meu-voto { border: 2px solid var(--verde); }
   .card.primeiro { border: 3px solid var(--ouro); box-shadow: 0 0 28px rgba(234, 179, 8, .25); }
   .foto {
     position: relative;
@@ -307,7 +309,7 @@
 <div class="pagina">
   <header>
     <h1>🎃 Concurso de Fantasias</h1>
-    <p>Halloween 2026 · Cadastre sua fantasia e vote na melhor. Para votar, você recebe um código no seu e-mail @amchambrasil.com.br. Um voto por pessoa.</p>
+    <p>Halloween 2026 · Cadastre sua fantasia e vote na melhor. Para votar, informe seu e-mail @amchambrasil.com.br. Um voto por pessoa.</p>
   </header>
 
   <div id="faixa" class="faixa" role="status" aria-live="polite">⏳ Carregando as fantasias...</div>
@@ -343,24 +345,13 @@
       <img id="votoFoto" alt="">
       <div><strong id="votoTitulo"></strong><span id="votoAutor"></span></div>
     </div>
-
-    <div id="passoEmail">
-      <label for="votoEmail">Seu e-mail corporativo</label>
-      <input id="votoEmail" type="email" inputmode="email" autocomplete="email" placeholder="nome.sobrenome@amchambrasil.com.br">
-      <p style="margin-top:8px">Vamos enviar um código de 6 dígitos para esse e-mail. Cada pessoa tem um único voto.</p>
-    </div>
-
-    <div id="passoCodigo" hidden>
-      <p style="margin-top:14px">Enviamos um código para <strong id="emailEnviado"></strong>. Confira sua caixa de entrada (e o lixo eletrônico).</p>
-      <label for="votoCodigo">Código recebido</label>
-      <input id="votoCodigo" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" style="letter-spacing:6px;font-size:22px;text-align:center">
-      <p style="margin-top:8px">Depois de confirmar, não dá para trocar o voto. <a href="#" id="lnkReenviar" style="color:var(--laranja)">Reenviar código</a> · <a href="#" id="lnkTrocarEmail" style="color:var(--laranja)">Usar outro e-mail</a></p>
-    </div>
-
+    <label for="votoEmail">Seu e-mail corporativo</label>
+    <input id="votoEmail" type="email" inputmode="email" autocomplete="email" placeholder="nome.sobrenome@amchambrasil.com.br">
+    <p style="margin-top:8px">Um voto por pessoa. Depois de confirmar, não dá para trocar.</p>
     <div id="votoAviso" class="aviso" role="alert"></div>
     <div class="botoes">
       <button class="btn btn-contorno" data-fechar>Cancelar</button>
-      <button class="btn btn-laranja" id="btnPrincipalVoto">Receber código</button>
+      <button class="btn btn-laranja" id="btnConfirmarVoto">Confirmar voto</button>
     </div>
   </div>
 </div>
@@ -375,8 +366,8 @@
 </section>
 
 <script>
-const URL_LEITURA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/03/workflows/ba45d12f0fe8432c9dc1f286b3ffe9ec/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xdCBlYyBnE1O_rUdHiPDB6BjY65LGkCIouZxfLKKunk";
-const URL_ESCRITA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/618f5758358a4e5697a384d1d1004f9e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gA2w4zHP4kiICRVJRFs17qAY_utPiji3M7ZVkka2gws";
+const URL_LEITURA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/06/workflows/450f95dd05bc451d91853bfe74e8975f/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=qML7JBnGbHS1ySVsb2yk2BF4mo9a484jkDBd-3XSw1I";
+const URL_ESCRITA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/05/workflows/d12ef0679d40406d8a6ab333a2bc5d50/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=03J_kxOAbo0up7lE4J4lMoVCDkIaKegFTeToPx9FcTE";
 const URL_FORMS = "https://forms.office.com/Pages/ResponsePage.aspx?id=N0Zie_rLEEGi9jTKh0A0o0IYMMDt0m1NiW8f-Tt6lRNUN0lQSjIwR080VlRLWjQ0MDUxRlczMElFUiQlQCN0PWcu";
 const DOMINIO = "@amchambrasil.com.br";
 const ATUALIZAR_A_CADA_MS = 45000;
@@ -446,11 +437,16 @@ function desenhar() {
     f.className = "faixa encerrada";
     f.textContent = "🔒 Votação encerrada! O resultado aparece aqui em instantes.";
   } else {
-    const meu = ler("halloween2026-voto");
+    const voto = votoDesteAparelho();
+    const rodada = estado.rodada || 1;
     f.className = "faixa";
-    f.textContent = meu
-      ? "✅ Seu voto foi em “" + meu + "”. Obrigado por participar!"
-      : "👻 Escolha sua fantasia favorita e toque em Votar. Você tem um único voto.";
+    if (jaVotouNestaRodada()) {
+      f.textContent = "✅ Seu voto foi em “" + voto.titulo + "”" + (rodada > 1 ? " (rodada " + rodada + ")" : "") + ". Obrigado por participar!";
+    } else if (rodada > 1) {
+      f.textContent = "🔁 Rodada " + rodada + " da votação! Você pode votar de novo — os votos se somam aos da rodada anterior.";
+    } else {
+      f.textContent = "👻 Escolha sua fantasia favorita e toque em Votar. Você tem um único voto.";
+    }
   }
 
   $("acoes").hidden = false;
@@ -509,8 +505,15 @@ function desenhar() {
     } else if (aberta) {
       const b = document.createElement("button");
       b.className = "btn btn-roxo btn-largo";
-      b.textContent = "🗳️ Votar";
-      b.addEventListener("click", () => abrirVoto(item));
+      if (jaVotouNestaRodada()) {
+        const meu = votoDesteAparelho().titulo === item.titulo;
+        b.disabled = true;
+        b.textContent = meu ? "✔ Seu voto" : "Você já votou";
+        if (meu) card.classList.add("meu-voto");
+      } else {
+        b.textContent = "🗳️ Votar";
+        b.addEventListener("click", () => abrirVoto(item));
+      }
       conteudo.appendChild(b);
     }
     card.appendChild(conteudo);
@@ -679,22 +682,13 @@ function abrirVoto(item) {
   $("votoFoto").src = urlFoto(item.id);
   $("votoFoto").alt = "Foto de " + item.titulo;
   $("votoEmail").value = ler("halloween2026-email");
-  $("votoCodigo").value = "";
-  mostrarPasso("email");
   avisar("", "");
+  $("btnConfirmarVoto").disabled = false;
+  $("btnConfirmarVoto").textContent = "Confirmar voto";
   abrir("fundoVoto");
   setTimeout(() => $("votoEmail").focus(), 50);
 }
 
-let passo = "email";
-function mostrarPasso(qual) {
-  passo = qual;
-  $("passoEmail").hidden = qual !== "email";
-  $("passoCodigo").hidden = qual !== "codigo";
-  const b = $("btnPrincipalVoto");
-  b.disabled = false;
-  b.textContent = qual === "email" ? "Receber código" : "Confirmar voto";
-}
 function avisar(texto, tipo) {
   const a = $("votoAviso");
   a.className = "aviso" + (tipo ? " " + tipo : "");
@@ -706,13 +700,19 @@ const MENSAGENS = {
   email_nao_encontrado: "Não encontramos esse e-mail na Amcham. Confira se digitou certo.",
   encerrada: "A votação foi encerrada.",
   indisponivel: "Essa fantasia não está mais disponível. Atualize a página.",
-  codigo_invalido: "Código incorreto. Confira o e-mail e tente de novo.",
-  codigo_expirado: "Esse código expirou. Toque em “Reenviar código”.",
-  codigo_bloqueado: "Muitas tentativas com esse código. Toque em “Reenviar código” para receber outro.",
-  aguarde: "Acabamos de enviar um código para esse e-mail. Aguarde 1 minuto para pedir outro.",
 };
-function mensagemJaVotou(r) {
-  return "Este e-mail já votou" + (r.mensagem ? " em “" + r.mensagem + "”" : "") + ". Cada pessoa tem um único voto.";
+
+// Voto deste aparelho na rodada atual: {rodada, titulo}. Desativa os botoes "Votar"
+// ate o organizador reabrir a votacao (nova rodada).
+function votoDesteAparelho() {
+  try { return JSON.parse(ler("halloween2026-votou") || "null"); } catch (_) { return null; }
+}
+function guardarVoto(rodada, titulo) {
+  guardar("halloween2026-votou", JSON.stringify({ rodada: rodada || 1, titulo: titulo || "" }));
+}
+function jaVotouNestaRodada() {
+  const v = votoDesteAparelho();
+  return !!v && v.rodada === (estado.rodada || 1);
 }
 
 async function enviar(dados) {
@@ -725,62 +725,38 @@ async function enviar(dados) {
   return resp.json();
 }
 
-async function pedirCodigo() {
+$("btnConfirmarVoto").addEventListener("click", async () => {
   const email = $("votoEmail").value.trim().toLowerCase();
   if (!emailValido(email)) { avisar(MENSAGENS.email_invalido, "erro"); return; }
-  const b = $("btnPrincipalVoto");
-  b.disabled = true;
-  b.textContent = "⏳ Enviando código...";
-  avisar("", "");
-  try {
-    const r = await enviar({ acao: "codigo", email });
-    guardar("halloween2026-email", email);
-    if (r.status === "codigo_enviado") {
-      $("emailEnviado").textContent = email;
-      mostrarPasso("codigo");
-      avisar("Código enviado! Ele vale por 15 minutos.", "ok");
-      setTimeout(() => $("votoCodigo").focus(), 50);
-      return;
-    }
-    avisar(r.status === "ja_votou" ? mensagemJaVotou(r) : (MENSAGENS[r.status] || "Não conseguimos enviar o código agora. Tente de novo em instantes."), "erro");
-    if (r.status === "encerrada") carregar(true);
-  } catch (_) {
-    avisar("Falha de conexão. Confira a internet e tente de novo.", "erro");
-  }
-  mostrarPasso("email");
-}
-
-async function confirmarVoto() {
-  const email = $("votoEmail").value.trim().toLowerCase();
-  const codigo = $("votoCodigo").value.replace(/\D/g, "");
-  if (codigo.length !== 6) { avisar("Digite os 6 números do código.", "erro"); return; }
-  const b = $("btnPrincipalVoto");
+  const b = $("btnConfirmarVoto");
   b.disabled = true;
   b.textContent = "⏳ Registrando...";
   avisar("", "");
   try {
-    const r = await enviar({ acao: "votar", email, id: escolhida.id, codigo });
+    const r = await enviar({ acao: "votar", email, id: escolhida.id });
+    guardar("halloween2026-email", email);
     if (r.status === "confirmado") {
-      guardar("halloween2026-voto", r.mensagem || escolhida.titulo);
+      guardarVoto(r.rodada, r.mensagem || escolhida.titulo);
       fechar("fundoVoto");
       toast("✅ Voto registrado em “" + (r.mensagem || escolhida.titulo) + "”. Obrigado! 🎃");
       desenhar();
       return;
     }
-    avisar(r.status === "ja_votou" ? mensagemJaVotou(r) : (MENSAGENS[r.status] || "Não conseguimos registrar agora. Tente de novo em instantes."), "erro");
-    if (r.status === "encerrada" || r.status === "indisponivel") carregar(true);
+    if (r.status === "ja_votou") {
+      guardarVoto(r.rodada, r.mensagem);
+      avisar("Este e-mail já votou" + (r.mensagem ? " em “" + r.mensagem + "”" : "") + " nesta rodada.", "erro");
+      desenhar();
+    } else {
+      avisar(MENSAGENS[r.status] || "Não conseguimos registrar agora. Tente de novo em instantes.", "erro");
+      if (r.status === "encerrada" || r.status === "indisponivel") carregar(true);
+    }
   } catch (_) {
     avisar("Falha de conexão. Confira a internet e tente de novo.", "erro");
   }
   b.disabled = false;
   b.textContent = "Confirmar voto";
-}
-
-$("btnPrincipalVoto").addEventListener("click", () => (passo === "email" ? pedirCodigo() : confirmarVoto()));
-$("votoEmail").addEventListener("keydown", (e) => { if (e.key === "Enter") pedirCodigo(); });
-$("votoCodigo").addEventListener("keydown", (e) => { if (e.key === "Enter") confirmarVoto(); });
-$("lnkReenviar").addEventListener("click", (e) => { e.preventDefault(); pedirCodigo(); });
-$("lnkTrocarEmail").addEventListener("click", (e) => { e.preventDefault(); mostrarPasso("email"); avisar("", ""); $("votoEmail").focus(); });
+});
+$("votoEmail").addEventListener("keydown", (e) => { if (e.key === "Enter") $("btnConfirmarVoto").click(); });
 
 // Cadastro pelo mesmo Forms usado no app.
 $("btnCadastrar").addEventListener("click", () => window.open(URL_FORMS, "_blank", "noopener"));
