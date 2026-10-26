@@ -222,7 +222,7 @@
   .telao-qr img { width: 54vh; height: 54vh; display: block; }
   .telao-etapa:empty { display: none; }
   .telao-espera { margin-top: 4vh; }
-  .telao-qr .legenda { font-size: 4.6vh; font-weight: 800; color: #fff; }
+  .telao-qr .legenda { font-size: 3.8vh; font-weight: 800; color: #fff; max-width: 64vh; line-height: 1.2; }
   .telao-espera .telao-numeros { flex-direction: column; margin-top: 0; gap: 3vh; }
   .telao-espera .telao-numero { padding: 2.5vh 3vw; min-width: 22vw; }
   .telao-espera .telao-numero b { font-size: 11vh; }
@@ -781,7 +781,7 @@ function telaEspera(fantasias, votos) {
     quadro.appendChild(img);
     const legenda = document.createElement("div");
     legenda.className = "legenda";
-    legenda.textContent = "📱 Aponte a câmera e vote!";
+    legenda.textContent = "📱 Aponte a câmera para votar ou cadastrar sua fantasia!";
     qr.append(quadro, legenda);
     linha.append(qr, numeros);
     chamada.textContent = "ou acesse ";
