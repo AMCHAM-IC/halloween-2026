@@ -331,7 +331,7 @@
 </section>
 
 <script>
-const URL_LEITURA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/11/workflows/0f28bcd13c20472aa07572949290e507/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2sMM_VHHLt627rWPw6piHBZ8LS2fpm9xmyp9Ydhfr6U";
+const URL_LEITURA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/03/workflows/ba45d12f0fe8432c9dc1f286b3ffe9ec/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=xdCBlYyBnE1O_rUdHiPDB6BjY65LGkCIouZxfLKKunk";
 const URL_ESCRITA = "https://default7b624637cbfa4110a2f634ca874034.a3.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/618f5758358a4e5697a384d1d1004f9e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gA2w4zHP4kiICRVJRFs17qAY_utPiji3M7ZVkka2gws";
 const URL_FORMS = "https://forms.office.com/Pages/ResponsePage.aspx?id=N0Zie_rLEEGi9jTKh0A0o0IYMMDt0m1NiW8f-Tt6lRNUN0lQSjIwR080VlRLWjQ0MDUxRlczMElFUiQlQCN0PWcu";
 const DOMINIO = "@amchambrasil.com.br";
@@ -799,22 +799,36 @@ function telaEspera(fantasias, votos) {
 
 function desenharTelao() {
   const t = lerEstadoTelao(estado.telao);
-  const assinatura = (estado.fase || "") + "#" + (estado.telao || "") + "#" + (estado.inscricoes || []).length;
+  const totalVotos = typeof estado.total_votos === "number" && estado.total_votos >= 0 ? estado.total_votos : null;
+  const assinatura = [estado.fase, estado.telao, totalVotos, JSON.stringify(estado.inscricoes || [])].join("#");
   if (assinatura === assinaturaTelao) return; // so redesenha quando algo mudou
   assinaturaTelao = assinatura;
 
   const etapa = $("telaoEtapa");
   const conteudo = $("telaoConteudo");
   conteudo.textContent = "";
-  const fantasias = (estado.inscricoes || []).length;
-
-  if (!t || t.etapa === 0) {
-    etapa.textContent = "";
-    conteudo.appendChild(telaEspera(fantasias, t ? t.total : null));
-    return;
-  }
+  const lista = estado.inscricoes || [];
   const cards = document.createElement("div");
   cards.className = "telao-cards";
+
+  // 1) Resultado publicado (de onde quer que tenha sido publicado): podio automatico.
+  if (estado.fase === "RESULTADO_PUBLICADO") {
+    const posicao = (item) => 1 + lista.filter((o) => o.votos > item.votos).length;
+    const podio = lista.filter((i) => i.votos > 0 && posicao(i) <= 3).sort((a, b) => posicao(a) - posicao(b));
+    etapa.textContent = podio.length ? "🏆 Os grandes vencedores!" : "Nenhum voto registrado";
+    podio.forEach((i) => cards.appendChild(cardTelao(i, posicao(i), i.votos, true)));
+    conteudo.appendChild(cards);
+    return;
+  }
+
+  // 2) Sem revelacao em andamento no app: tela de espera com a contagem ao vivo.
+  if (!t || t.etapa === 0) {
+    etapa.textContent = "";
+    conteudo.appendChild(telaEspera(lista.length, totalVotos !== null ? totalVotos : (t ? t.total : null)));
+    return;
+  }
+
+  // 3) Revelacao conduzida pelo app (3o -> 2o -> 1o -> podio).
   if (t.etapa > t.etapas) {
     etapa.textContent = t.revelados.length ? "🏆 Os grandes vencedores!" : "Nenhum voto registrado";
     t.revelados.slice().sort((a, b) => a.pos - b.pos)
@@ -830,7 +844,7 @@ function desenharTelao() {
 
 async function carregarTelao() {
   try {
-    const resp = await fetch(URL_LEITURA + "&acao=listar", { cache: "no-store" });
+    const resp = await fetch(URL_LEITURA + "&acao=listar&telao=1", { cache: "no-store" });
     if (!resp.ok) return;
     estado = await resp.json();
     desenharTelao();
