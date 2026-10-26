@@ -216,6 +216,16 @@
     font-size: min(6.5vh, 4.4vw); margin: 0; letter-spacing: 2px; text-shadow: 0 0 30px rgba(255, 122, 24, .4);
   }
   #telaoConteudo { width: 100%; }
+  .telao-espera { display: flex; align-items: center; justify-content: center; gap: 5vw; margin-top: 1vh; }
+  .telao-qr { display: flex; flex-direction: column; align-items: center; gap: 1.6vh; }
+  .telao-qr .quadro { background: #fff; padding: 2.2vh; border-radius: 3vh; box-shadow: 0 0 60px rgba(255, 122, 24, .35); }
+  .telao-qr img { width: 54vh; height: 54vh; display: block; }
+  .telao-etapa:empty { display: none; }
+  .telao-espera { margin-top: 4vh; }
+  .telao-qr .legenda { font-size: 4.6vh; font-weight: 800; color: #fff; }
+  .telao-espera .telao-numeros { flex-direction: column; margin-top: 0; gap: 3vh; }
+  .telao-espera .telao-numero { padding: 2.5vh 3vw; min-width: 22vw; }
+  .telao-espera .telao-numero b { font-size: 11vh; }
   .telao-etapa { font-weight: 800; color: #facc15; font-size: 7vh; margin: 2vh 0 3vh; min-height: 8vh; }
   .telao-numeros { display: flex; gap: 4vw; justify-content: center; margin-top: 6vh; }
   .telao-numero {
@@ -694,6 +704,8 @@ $("btnAtualizar").addEventListener("click", () => carregar(false));
 // (so o que ja foi revelado). Vazio = telao desligado no app.
 const MODO_TELAO = new URLSearchParams(location.search).has("telao");
 const URL_SITE = "amcham-ic.github.io/halloween-2026";
+// QR code de https://amcham-ic.github.io/halloween-2026/ (gerado com segno, site/qrcode-site.svg).
+const QR_SITE = "data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4NCjxzdmcgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iNDEwIiBoZWlnaHQ9IjQxMCIgY2xhc3M9InNlZ25vIj48ZyB0cmFuc2Zvcm09InNjYWxlKDEwKSI+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTAgMGg0MXY0MWgtNDF6Ii8+PHBhdGggY2xhc3M9InFybGluZSIgc3Ryb2tlPSIjMTEwZDFhIiBkPSJNMiAyLjVoN20xIDBoMW0yIDBoNG0xIDBoMW0xIDBoM20yIDBoMW0xIDBoMW0yIDBoMW0xIDBoN20tMzcgMWgxbTUgMGgxbTEgMGgybTEgMGgzbTIgMGgybTIgMGgxbTIgMGgxbTMgMGgxbTIgMGgxbTUgMGgxbS0zNyAxaDFtMSAwaDNtMSAwaDFtMSAwaDltMyAwaDFtMSAwaDFtMSAwaDFtMyAwaDFtMSAwaDFtMSAwaDNtMSAwaDFtLTM3IDFoMW0xIDBoM20xIDBoMW0yIDBoMW0zIDBoM20zIDBoMW00IDBoM20zIDBoMW0xIDBoM20xIDBoMW0tMzcgMWgxbTEgMGgzbTEgMGgxbTIgMGgybTEgMGgybTMgMGgxbTEgMGgybTEgMGgxbTEgMGgxbTUgMGgxbTEgMGgzbTEgMGgxbS0zNyAxaDFtNSAwaDFtMSAwaDFtMiAwaDJtMSAwaDJtMSAwaDJtMiAwaDVtMSAwaDJtMSAwaDFtNSAwaDFtLTM3IDFoN20xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoMW0xIDBoN20tMjkgMWgxbTIgMGgzbTMgMGgybTEgMGgybTYgMGgxbS0yNyAxaDNtMSAwaDFtMSAwaDFtMyAwaDFtMSAwaDRtMSAwaDJtMiAwaDNtMiAwaDRtMiAwaDNtLTM1IDFoNG0xIDBoMm0zIDBoMW0xIDBoOG0xIDBoNG04IDBoMW0tMzQgMWgzbTEgMGgxbTIgMGgxbTEgMGgzbTQgMGgybTIgMGgybTEgMGgzbTIgMGgxbTEgMGgxbTEgMGgzbS0zNyAxaDFtMSAwaDJtMSAwaDFtNCAwaDJtMiAwaDFtMSAwaDFtMSAwaDJtMiAwaDFtMSAwaDFtMSAwaDJtMiAwaDNtMyAwaDFtLTM3IDFoMW0xIDBoMW0yIDBoMm0xIDBoM20yIDBoNW0zIDBoMm0xIDBoNG0xIDBoMm0xIDBoM20tMzIgMWgybTMgMGg0bTIgMGg1bTMgMGgzbTMgMGgybTEgMGgxbTEgMGgybS0zNCAxaDNtMSAwaDNtNCAwaDJtNyAwaDJtMiAwaDVtMiAwaDJtMSAwaDJtLTM3IDFoM20yIDBoMW0xIDBoMW0xIDBoMW0xIDBoMm0xIDBoMW0zIDBoNG0yIDBoMW0xIDBoMW0xIDBoNW0yIDBoMW0tMzYgMWgxbTMgMGgxbTEgMGgxbTIgMGgybTEgMGgzbTIgMGgybTEgMGgzbTEgMGgzbTIgMGgybTEgMGgxbTEgMGgxbTEgMGgxbS0zMyAxaDJtNSAwaDFtMiAwaDFtMSAwaDFtMSAwaDRtMSAwaDFtOSAwaDJtLTM0IDFoMW0yIDBoMW0xIDBoNW0xIDBoM20yIDBoNG0xIDBoMm0zIDBoMm0yIDBoMW0xIDBoMW0xIDBoMm0tMzYgMWgybTEgMGgybTMgMGgybTEgMGgxbTEgMGgxbTEgMGgybTIgMGgxbTEgMGgxbTMgMGgxbTIgMGg0bTIgMGgxbS0zNiAxaDJtNCAwaDFtMyAwaDFtMSAwaDFtMSAwaDFtMSAwaDFtMSAwaDFtNCAwaDVtMSAwaDZtLTM1IDFoMW0zIDBoMW0zIDBoMW0yIDBoMW0xIDBoMW0xIDBoMm0zIDBoM204IDBoMW0zIDBoMW0tMzUgMWgybTEgMGg0bTIgMGg0bTQgMGgxbTQgMGgxbTEgMGgzbTEgMGgxbTUgMGgybS0zNiAxaDFtOSAwaDJtMSAwaDNtNCAwaDJtMSAwaDFtNCAwaDNtMyAwaDFtLTM0IDFoMW0xIDBoMW0xIDBoMW0xIDBoMW0yIDBoMm0xIDBoMW0zIDBoMW0yIDBoMW0xIDBoM20yIDBoMW0xIDBoMW0xIDBoNG0tMzYgMWg0bTUgMGgzbTMgMGgxbTIgMGgybTIgMGgxbTEgMGgxbTQgMGgxbTEgMGgxbS0zMiAxaDFtMSAwaDFtMSAwaDFtMSAwaDJtMiAwaDFtMSAwaDJtMiAwaDVtMSAwaDFtMSAwaDFtMiAwaDFtMiAwaDJtMyAwaDJtLTM3IDFoMW0yIDBoMW00IDBoM20zIDBoMW00IDBoMW0xIDBoMm0xIDBoMW0xIDBoMW0yIDBoMW0xIDBoMW00IDBoMW0tMzcgMWgxbTQgMGgybTEgMGgxbTIgMGgybTMgMGgybTEgMGgzbTIgMGgxM20tMjkgMWgxbTEgMGg2bTEgMGgxbTEgMGgybTEgMGgybTEgMGgxbTEgMGgybTMgMGgxbS0zMyAxaDdtMiAwaDFtMSAwaDFtMiAwaDFtMSAwaDFtMSAwaDRtMiAwaDFtMyAwaDFtMSAwaDFtMSAwaDJtMSAwaDJtLTM3IDFoMW01IDBoMW0zIDBoMW01IDBoMW0xIDBoMW0yIDBoMm0zIDBoM20zIDBoMW0yIDBoMm0tMzcgMWgxbTEgMGgzbTEgMGgxbTEgMGgzbTEgMGgybTMgMGgybTEgMGgxbTIgMGgxMG0xIDBoMm0tMzYgMWgxbTEgMGgzbTEgMGgxbTEgMGgxbTEgMGgxbTMgMGgybTEgMGgybTEgMGgzbTEgMGgzbTEgMGgxbTEgMGgxbTEgMGgybS0zNCAxaDFtMSAwaDNtMSAwaDFtMSAwaDFtMSAwaDJtMSAwaDFtMTIgMGgxbTEgMGgybTYgMGgxbS0zNyAxaDFtNSAwaDFtMiAwaDJtNSAwaDFtMiAwaDJtMiAwaDFtMyAwaDJtMyAwaDFtMyAwaDFtLTM3IDFoN20zIDBoMm0xIDBoM20yIDBoMm0xIDBoMW0xIDBoNG0yIDBoMm0yIDBoNCIvPjwvZz48L3N2Zz4NCg==";
 let assinaturaTelao = "";
 
 function lerEstadoTelao(texto) {
@@ -756,14 +768,32 @@ function telaEspera(fantasias, votos) {
   const chamada = document.createElement("div");
   chamada.className = "telao-chamada";
   if (estado.fase === "VOTACAO_ABERTA") {
-    chamada.textContent = "📱 Vote pelo celular: ";
+    // QR grande ao lado dos numeros enquanto a votacao estiver aberta.
+    const linha = document.createElement("div");
+    linha.className = "telao-espera";
+    const qr = document.createElement("div");
+    qr.className = "telao-qr";
+    const quadro = document.createElement("div");
+    quadro.className = "quadro";
+    const img = document.createElement("img");
+    img.src = QR_SITE;
+    img.alt = "QR code para votar: " + URL_SITE;
+    quadro.appendChild(img);
+    const legenda = document.createElement("div");
+    legenda.className = "legenda";
+    legenda.textContent = "📱 Aponte a câmera e vote!";
+    qr.append(quadro, legenda);
+    linha.append(qr, numeros);
+    chamada.textContent = "ou acesse ";
     const s = document.createElement("strong");
     s.textContent = URL_SITE;
     chamada.appendChild(s);
+    chamada.style.marginTop = "2.5vh";
+    caixa.append(linha, chamada);
   } else {
     chamada.textContent = "🔒 Votação encerrada! Preparem-se para conhecer os vencedores...";
+    caixa.append(numeros, chamada);
   }
-  caixa.append(numeros, chamada);
   return caixa;
 }
 
