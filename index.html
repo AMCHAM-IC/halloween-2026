@@ -418,6 +418,7 @@ function desenhar() {
   const fase = estado.fase || "VOTACAO_ABERTA";
   const resultado = fase === "RESULTADO_PUBLICADO";
   const aberta = fase === "VOTACAO_ABERTA";
+  const inscricoes = fase === "INSCRICOES";
   let lista = (estado.inscricoes || []).slice();
 
   if (resultado) lista.sort((a, b) => (b.votos - a.votos) || (a.id - b.id));
@@ -433,6 +434,9 @@ function desenhar() {
       : "🏆 " + (vencedores.length > 1 ? "Empate no 1º lugar: " : "Vencedora: ") +
         vencedores.map((v) => "“" + v.titulo + "” (" + v.participante + ")").join(" e ") +
         " com " + textoVotos(maximo).replace("🗳️ ", "") + "!";
+  } else if (inscricoes) {
+    f.className = "faixa";
+    f.textContent = "📝 Inscrições abertas! Cadastre sua fantasia — a votação começa em breve.";
   } else if (!aberta) {
     f.className = "faixa encerrada";
     f.textContent = "🔒 Votação encerrada! O resultado aparece aqui em instantes.";
@@ -450,7 +454,7 @@ function desenhar() {
   }
 
   $("acoes").hidden = false;
-  $("btnCadastrar").hidden = !aberta;
+  $("btnCadastrar").hidden = !inscricoes; // cadastro so na fase de inscricoes
   $("vazio").hidden = lista.length > 0;
 
   const grade = $("grade");
@@ -698,7 +702,7 @@ function avisar(texto, tipo) {
 const MENSAGENS = {
   email_invalido: "Use seu e-mail " + DOMINIO + ".",
   email_nao_encontrado: "Não encontramos esse e-mail na Amcham. Confira se digitou certo.",
-  encerrada: "A votação foi encerrada.",
+  encerrada: "A votação não está aberta agora.",
   indisponivel: "Essa fantasia não está mais disponível. Atualize a página.",
 };
 
@@ -832,7 +836,7 @@ function telaEspera(fantasias, votos) {
   }
   const chamada = document.createElement("div");
   chamada.className = "telao-chamada";
-  if (estado.fase === "VOTACAO_ABERTA") {
+  if (estado.fase === "VOTACAO_ABERTA" || estado.fase === "INSCRICOES") {
     // QR grande ao lado dos numeros enquanto a votacao estiver aberta.
     const linha = document.createElement("div");
     linha.className = "telao-espera";
@@ -846,7 +850,7 @@ function telaEspera(fantasias, votos) {
     quadro.appendChild(img);
     const legenda = document.createElement("div");
     legenda.className = "legenda";
-    legenda.textContent = "📱 Aponte a câmera para votar ou cadastrar sua fantasia!";
+    legenda.textContent = estado.fase === "INSCRICOES" ? "📱 Aponte a câmera para cadastrar sua fantasia!" : "📱 Aponte a câmera para votar!";
     qr.append(quadro, legenda);
     linha.append(qr, numeros);
     chamada.textContent = "ou acesse ";
