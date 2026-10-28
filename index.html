@@ -404,6 +404,8 @@ let escolhida = null;
 
 function guardar(chave, valor) { try { localStorage.setItem(chave, valor); } catch (_) {} }
 function ler(chave) { try { return localStorage.getItem(chave) || ""; } catch (_) { return ""; } }
+// Limpa o que ficou guardado nos aparelhos durante os testes (voto e e-mail de teste).
+try { ["halloween2026-votou", "halloween2026-email", "halloween2026-voto"].forEach((k) => localStorage.removeItem(k)); } catch (_) {}
 
 function urlFoto(id) { return URL_LEITURA + "&acao=foto&id=" + encodeURIComponent(id); }
 
@@ -791,7 +793,7 @@ function abrirVoto(item) {
   $("votoAutor").textContent = "por " + item.participante;
   $("votoFoto").src = urlFoto(item.id);
   $("votoFoto").alt = "Foto de " + item.titulo;
-  $("votoEmail").value = ler("halloween2026-email");
+  $("votoEmail").value = ler("halloween2026-evento-email");
   avisar("", "");
   $("btnConfirmarVoto").disabled = false;
   $("btnConfirmarVoto").textContent = "Confirmar voto";
@@ -815,10 +817,10 @@ const MENSAGENS = {
 // Voto deste aparelho na rodada atual: {rodada, titulo}. Desativa os botoes "Votar"
 // ate o organizador reabrir a votacao (nova rodada).
 function votoDesteAparelho() {
-  try { return JSON.parse(ler("halloween2026-votou") || "null"); } catch (_) { return null; }
+  try { return JSON.parse(ler("halloween2026-evento-votou") || "null"); } catch (_) { return null; }
 }
 function guardarVoto(rodada, titulo) {
-  guardar("halloween2026-votou", JSON.stringify({ rodada: rodada || 1, titulo: titulo || "" }));
+  guardar("halloween2026-evento-votou", JSON.stringify({ rodada: rodada || 1, titulo: titulo || "" }));
 }
 function jaVotouNestaRodada() {
   const v = votoDesteAparelho();
@@ -844,7 +846,7 @@ $("btnConfirmarVoto").addEventListener("click", async () => {
   avisar("", "");
   try {
     const r = await enviar({ acao: "votar", email, id: escolhida.id });
-    guardar("halloween2026-email", email);
+    guardar("halloween2026-evento-email", email);
     if (r.status === "confirmado") {
       guardarVoto(r.rodada, r.mensagem || escolhida.titulo);
       fechar("fundoVoto");
